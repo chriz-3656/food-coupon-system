@@ -61,9 +61,12 @@
 </head>
 <body>
     <div class="container admin-container">
-        <header>
+        <header style="display:flex; justify-content:space-between; align-items:center;">
             <h1>Admin Dashboard</h1>
-            <a href="/verify.html" class="btn" style="width:auto; padding: 8px 16px;">Go to Volunteer Scanner</a>
+            <div>
+                <a href="/verify.html" class="btn" style="width:auto; padding: 8px 16px; margin-right: 10px;">Volunteer Scanner</a>
+                <a href="/api/admin-export" target="_blank" class="btn btn-success" style="width:auto; padding: 8px 16px;">Export CSV</a>
+            </div>
         </header>
 
         <div class="card">
@@ -144,7 +147,10 @@
 
                         let actionBtn = '';
                         if (st.verification_status === 'PENDING') {
-                            actionBtn = `<button class="btn btn-success" style="padding:6px; font-size:0.8rem;" onclick="verifyStudent('${st.id}')">Verify</button>`;
+                            actionBtn += `<button class="btn btn-success" style="padding:6px; font-size:0.8rem; margin-right: 5px;" onclick="verifyStudent('${st.id}')">Verify</button>`;
+                            actionBtn += `<button class="btn btn-danger" style="padding:6px; font-size:0.8rem;" onclick="rejectStudent('${st.id}')">Reject</button>`;
+                        } else if (cStatus === 'ACTIVE') {
+                            actionBtn += `<button class="btn btn-danger" style="padding:6px; font-size:0.8rem;" onclick="revokeCoupon('${cCode}')">Revoke</button>`;
                         }
 
                         tbody.innerHTML += `
@@ -174,6 +180,46 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ student_id: id, action: 'verify' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadStats();
+                    loadStudents();
+                } else {
+                    alert('Error: ' + data.error.message);
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        async function rejectStudent(id) {
+            if (!confirm('Reject this student?')) return;
+            try {
+                const res = await fetch('/api/admin-verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ student_id: id, action: 'reject' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadStats();
+                    loadStudents();
+                } else {
+                    alert('Error: ' + data.error.message);
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        async function revokeCoupon(code) {
+            if (!confirm('Revoke this coupon? It will no longer be valid.')) return;
+            try {
+                const res = await fetch('/api/admin-revoke', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ coupon_code: code })
                 });
                 const data = await res.json();
                 if (data.success) {

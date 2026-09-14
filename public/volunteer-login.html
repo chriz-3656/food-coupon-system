@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Volunteer Login</h1>
+            <p>Access the QR scanner</p>
+        </header>
+
+        <div class="card">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="password">Volunteer Password / PIN</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn" id="submit-btn">Login</button>
+            </form>
+            <div id="message-box"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const msgBox = document.getElementById('message-box');
+            
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            msgBox.style.display = 'none';
+            msgBox.className = '';
+
+            try {
+                const res = await fetch('/api/volunteer-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: document.getElementById('password').value })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    window.location.href = '/verify.html';
+                } else {
+                    msgBox.textContent = result.error.message || 'Login failed.';
+                    msgBox.classList.add('msg-error');
+                    msgBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Login';
+                }
+            } catch (error) {
+                msgBox.textContent = 'Network error.';
+                msgBox.classList.add('msg-error');
+                msgBox.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        });
+    </script>
+</body>
+</html>

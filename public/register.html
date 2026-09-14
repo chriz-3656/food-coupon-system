@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Food Coupon</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Student Registration</h1>
+            <p>Register to receive your food coupon.</p>
+        </header>
+
+        <div class="card">
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required placeholder="Jane Doe">
+                </div>
+                <div class="form-group">
+                    <label for="student_id">Student ID</label>
+                    <input type="text" id="student_id" required placeholder="CS12345">
+                </div>
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" required placeholder="Computer Science">
+                </div>
+                <div class="form-group">
+                    <label for="year">Year / Class (Optional)</label>
+                    <input type="text" id="year" placeholder="Senior">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number (Optional)</label>
+                    <input type="tel" id="phone" placeholder="555-0123">
+                </div>
+                <button type="submit" class="btn" id="submit-btn">Register</button>
+            </form>
+            <div id="message-box"></div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="/registration-status.html">Already registered? Check status</a>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const msgBox = document.getElementById('message-box');
+            
+            btn.disabled = true;
+            btn.textContent = 'Registering...';
+            msgBox.style.display = 'none';
+            msgBox.className = '';
+
+            const data = {
+                name: document.getElementById('name').value,
+                student_id: document.getElementById('student_id').value,
+                department: document.getElementById('department').value,
+                year: document.getElementById('year').value,
+                phone: document.getElementById('phone').value
+            };
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    msgBox.textContent = 'Registration successful! Redirecting...';
+                    msgBox.classList.add('msg-success');
+                    msgBox.style.display = 'block';
+                    
+                    localStorage.setItem('student_uuid', result.data.id);
+                    setTimeout(() => {
+                        window.location.href = `/registration-status.html`;
+                    }, 1500);
+                } else {
+                    msgBox.textContent = result.error.message || 'Registration failed.';
+                    msgBox.classList.add('msg-error');
+                    msgBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Register';
+                }
+            } catch (error) {
+                msgBox.textContent = 'Network error. Please try again.';
+                msgBox.classList.add('msg-error');
+                msgBox.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Register';
+            }
+        });
+    </script>
+</body>
+</html>

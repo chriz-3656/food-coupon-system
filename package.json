@@ -1,0 +1,21 @@
+{
+  "name": "food-coupon-system",
+  "version": "1.0.0",
+  "description": "One-Time Food Coupon System",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cookie": "^0.6.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

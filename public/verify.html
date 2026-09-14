@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Coupon</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        .scanner-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+        #reader {
+            width: 100%;
+            border: none;
+        }
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .huge-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .verify-info {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        .verify-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .manual-entry {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        .manual-input {
+            text-transform: uppercase;
+            font-family: monospace;
+            text-align: center;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Verify Coupon</h1>
+            <p>Scan QR or enter code manually</p>
+        </header>
+
+        <!-- SCANNER VIEW -->
+        <div id="view-scanner">
+            <div class="scanner-container">
+                <div id="reader"></div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="manual-entry">
+                    <label for="manual-code" class="text-center">Manual Code Entry</label>
+                    <input type="text" id="manual-code" class="manual-input" placeholder="A7K9-X2P4">
+                    <button id="btn-manual" class="btn mt-4">Verify Code</button>
+                </div>
+            </div>
+            <div id="scan-error" class="text-center" style="color:var(--danger); font-weight:bold; margin-top:10px;"></div>
+        </div>
+
+        <!-- RESULT VIEW -->
+        <div id="view-result" class="hidden">
+            <div class="action-card" id="result-card">
+                <div id="result-icon" class="huge-icon">❓</div>
+                <h2 id="result-title">Title</h2>
+                <div id="result-desc" class="text-muted mb-4">Description</div>
+                
+                <div id="student-info" class="verify-info hidden">
+                    <div class="verify-name" id="v-name">John Doe</div>
+                    <div id="v-sid">CS123</div>
+                    <div id="v-dept" class="text-muted">CS</div>
+                </div>
+
+                <div id="action-buttons">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let html5QrcodeScanner = null;
+        let currentToken = null;
+        let currentMethod = null;
+
+        function showScanner() {
+            document.getElementById('view-result').classList.add('hidden');
+            document.getElementById('view-scanner').classList.remove('hidden');
+            document.getElementById('scan-error').textContent = '';
+            document.getElementById('manual-code').value = '';
+            
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.resume();
+            } else {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: {width: 250, height: 250}, aspectRatio: 1.0 }, false);
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+
+        async function onScanSuccess(decodedText, decodedResult) {
+            // Stop scanning immediately to prevent multiple hits
+            if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            verifyCoupon({ token: decodedText }, 'QR');
+        }
+
+        function onScanFailure(error) {
+            // ignore constant failures
+        }
+
+        document.getElementById('btn-manual').addEventListener('click', () => {
+            const code = document.getElementById('manual-code').value.trim();
+            if (!code) return;
+            if(html5QrcodeScanner) html5QrcodeScanner.pause(true);
+            verifyCoupon({ code: code }, 'MANUAL');
+        });
+
+        async function verifyCoupon(payload, method) {
+            document.getElementById('view-scanner').classList.add('hidden');
+            document.getElementById('view-result').classList.remove('hidden');
+            
+            const card = document.getElementById('result-card');
+            const icon = document.getElementById('result-icon');
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const sInfo = document.getElementById('student-info');
+            const btns = document.getElementById('action-buttons');
+            
+            icon.textContent = '⏳';
+            title.textContent = 'Verifying...';
+            title.style.color = 'var(--text-main)';
+            desc.textContent = 'Please wait';
+            sInfo.classList.add('hidden');
+            btns.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const c = data.data;
+                    
+                    if (c.status === 'ACTIVE') {
+                        // VALID, READY TO REDEEM
+                        icon.textContent = '✅';
+                        title.textContent = 'VALID COUPON';
+                        title.style.color = 'var(--success)';
+                        desc.textContent = 'Ready for redemption.';
+                        
+                        sInfo.classList.remove('hidden');
+                        document.getElementById('v-name').textContent = c.student_name;
+                        document.getElementById('v-sid').textContent = c.student_id;
+                        document.getElementById('v-dept').textContent = c.department;
+
+                        currentToken = c.coupon_token;
+                        currentMethod = method;
+
+                        btns.innerHTML = `
+                            <button class="btn btn-success" onclick="redeemCoupon()" style="padding:20px; font-size:1.5rem;">CONFIRM REDEMPTION</button>
+                            <button class="btn mt-4" onclick="showScanner()" style="background:#64748b;">Cancel</button>
+                        `;
+                    } else if (c.status === 'USED') {
+                        icon.textContent = '❌';
+                        title.textContent = 'ALREADY USED';
+                        title.style.color = 'var(--warning)';
+                        desc.textContent = `This coupon was already redeemed.`;
+                        
+                        sInfo.classList.remove('hidden');
+                        document.getElementById('v-name').textContent = c.student_name;
+                        document.getElementById('v-sid').textContent = c.student_id;
+                        
+                        btns.innerHTML = `<button class="btn btn-danger" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    } else {
+                        icon.textContent = '❌';
+                        title.textContent = 'INVALID STATUS';
+                        title.style.color = 'var(--danger)';
+                        desc.textContent = `Status: ${c.status}`;
+                        btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    }
+                } else {
+                    icon.textContent = '❌';
+                    title.textContent = 'INVALID COUPON';
+                    title.style.color = 'var(--danger)';
+                    desc.textContent = data.error.message || 'Could not verify coupon.';
+                    btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+                }
+            } catch (e) {
+                icon.textContent = '⚠️';
+                title.textContent = 'NETWORK ERROR';
+                title.style.color = 'var(--danger)';
+                desc.textContent = 'Could not reach server.';
+                btns.innerHTML = `<button class="btn" onclick="showScanner()">TRY AGAIN</button>`;
+            }
+        }
+
+        async function redeemCoupon() {
+            const btns = document.getElementById('action-buttons');
+            btns.innerHTML = `<h2>Redeeming...</h2>`;
+
+            try {
+                const res = await fetch('/api/redeem', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ token: currentToken, method: currentMethod })
+                });
+                const data = await res.json();
+                
+                const icon = document.getElementById('result-icon');
+                const title = document.getElementById('result-title');
+                const desc = document.getElementById('result-desc');
+
+                if (data.success) {
+                    icon.textContent = '🎉';
+                    title.textContent = 'COUPON REDEEMED';
+                    title.style.color = 'var(--success)';
+                    desc.textContent = 'FOOD CAN BE ISSUED';
+                    
+                    document.getElementById('view-result').style.background = '#dcfce7'; // make it very obvious
+                    setTimeout(() => { document.getElementById('view-result').style.background = 'transparent'; }, 1000);
+                    
+                    btns.innerHTML = `<button class="btn btn-success" onclick="showScanner()" style="padding:20px; font-size:1.3rem;">SCAN NEXT</button>`;
+                } else {
+                    icon.textContent = '❌';
+                    title.textContent = 'REDEMPTION FAILED';
+                    title.style.color = 'var(--danger)';
+                    desc.textContent = data.error.message || 'Failed to redeem.';
+                    
+                    btns.innerHTML = `<button class="btn btn-danger" onclick="showScanner()">BACK TO SCANNER</button>`;
+                }
+            } catch (e) {
+                const title = document.getElementById('result-title');
+                const desc = document.getElementById('result-desc');
+                title.textContent = 'NETWORK ERROR';
+                title.style.color = 'var(--danger)';
+                desc.textContent = 'Redemption state unknown. Check admin dashboard if unsure.';
+                btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+            }
+        }
+
+        // Start scanner on load
+        window.addEventListener('load', () => {
+            showScanner();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+const { createResponse, setAuthCookie, rateLimit } = require('./_utils');
+
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).end();
+    if (!rateLimit(req, res, 5, 60000)) {
+        return createResponse(res, 429, { success: false, error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many attempts.' }});
+    }
+
+    const { password } = req.body;
+
+    if (!password) {
+        return createResponse(res, 400, { success: false, error: { code: 'INVALID_INPUT', message: 'Password required.' }});
+    }
+
+    const correctPassword = process.env.VOLUNTEER_PASSWORD;
+
+    if (password === correctPassword) {
+        setAuthCookie(res, { role: 'volunteer' });
+        return createResponse(res, 200, { success: true, message: 'Logged in successfully.' });
+    } else {
+        return createResponse(res, 401, { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid password.' }});
+    }
+}

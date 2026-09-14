@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-VERIFIED, .badge-ACTIVE { background: #dcfce7; color: #166534; }
+        .badge-PENDING { background: #fef08a; color: #854d0e; }
+        .badge-REJECTED, .badge-EXPIRED, .badge-REVOKED { background: #fee2e2; color: #991b1b; }
+        .badge-USED { background: #e2e8f0; color: #334155; }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <a href="/verify.html" class="btn" style="width:auto; padding: 8px 16px;">Go to Volunteer Scanner</a>
+        </header>
+
+        <div class="card">
+            <h2>Statistics</h2>
+            <div class="stats-grid" id="stats-container">
+                Loading stats...
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Students</h2>
+            <div class="form-group mt-4" style="max-width: 300px;">
+                <input type="text" id="search-input" placeholder="Search by name or ID...">
+            </div>
+            
+            <div class="table-container">
+                <table id="students-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Student ID</th>
+                            <th>Status</th>
+                            <th>Coupon</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-body">
+                        <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4" style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn" id="btn-prev" style="width:auto; padding:8px 16px;">Previous</button>
+                <span id="page-info">Page 1</span>
+                <button class="btn" id="btn-next" style="width:auto; padding:8px 16px;">Next</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentPage = 1;
+        
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/admin-stats');
+                const data = await res.json();
+                if (data.success) {
+                    const s = data.data;
+                    document.getElementById('stats-container').innerHTML = `
+                        <div class="stat-card"><div class="stat-value">${s.registered}</div><div class="stat-label">Registered</div></div>
+                        <div class="stat-card"><div class="stat-value">${s.pending}</div><div class="stat-label">Pending</div></div>
+                        <div class="stat-card"><div class="stat-value" style="color:var(--success)">${s.verified}</div><div class="stat-label">Verified</div></div>
+                        <div class="stat-card"><div class="stat-value">${s.redeemed}</div><div class="stat-label">Redeemed</div></div>
+                    `;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadStudents() {
+            const search = document.getElementById('search-input').value;
+            try {
+                const res = await fetch(`/api/admin-students?page=${currentPage}&limit=20&search=${encodeURIComponent(search)}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('students-body');
+                    tbody.innerHTML = '';
+                    
+                    data.data.students.forEach(st => {
+                        let cStatus = 'N/A';
+                        let cCode = '';
+                        if (st.coupons && st.coupons.length > 0) {
+                            cStatus = st.coupons[0].status;
+                            cCode = st.coupons[0].coupon_code;
+                        }
+
+                        let actionBtn = '';
+                        if (st.verification_status === 'PENDING') {
+                            actionBtn = `<button class="btn btn-success" style="padding:6px; font-size:0.8rem;" onclick="verifyStudent('${st.id}')">Verify</button>`;
+                        }
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${st.name}</td>
+                                <td>${st.student_id}</td>
+                                <td><span class="badge badge-${st.verification_status}">${st.verification_status}</span></td>
+                                <td><span class="badge badge-${cStatus}">${cStatus}</span> <small>${cCode}</small></td>
+                                <td>${actionBtn}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    document.getElementById('page-info').textContent = `Page ${data.data.page}`;
+                    document.getElementById('btn-prev').disabled = currentPage === 1;
+                    document.getElementById('btn-next').disabled = data.data.students.length < 20;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function verifyStudent(id) {
+            if (!confirm('Verify this student and generate a coupon?')) return;
+            try {
+                const res = await fetch('/api/admin-verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ student_id: id, action: 'verify' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadStats();
+                    loadStudents();
+                } else {
+                    alert('Error: ' + data.error.message);
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            currentPage = 1;
+            loadStudents();
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadStudents();
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            currentPage++;
+            loadStudents();
+        });
+
+        loadStats();
+        loadStudents();
+    </script>
+</body>
+</html>

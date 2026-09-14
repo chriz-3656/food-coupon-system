@@ -28,10 +28,10 @@
         </div>
 
         <div class="card" id="manual-check-card" style="display:none;">
-             <h3>Check Status by Roll No</h3>
+             <h3>Check Status by Mobile Number</h3>
              <form id="check-form" class="mt-4">
                  <div class="form-group">
-                     <input type="text" id="student_id_check" required placeholder="Enter Roll No">
+                     <input type="tel" id="phone_check" required placeholder="Enter Mobile Number">
                  </div>
                  <button type="submit" class="btn">Check</button>
              </form>
@@ -64,9 +64,9 @@
             }
         }
 
-        async function checkStatusByID(studentId) {
+        async function checkStatusByPhone(phone) {
             try {
-                const res = await fetch(`/api/registration-status?student_id=${studentId}`);
+                const res = await fetch(`/api/registration-status?phone=${encodeURIComponent(phone)}`);
                 const data = await res.json();
                 const msg = document.getElementById('check-msg');
                 
@@ -99,9 +99,9 @@
 
         document.getElementById('check-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = document.getElementById('student_id_check').value;
+            const phone = document.getElementById('phone_check').value;
             document.getElementById('check-msg').textContent = 'Checking...';
-            checkStatusByID(id);
+            checkStatusByPhone(phone);
         });
     </script>
     <footer class="app-footer">

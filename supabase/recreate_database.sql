@@ -23,8 +23,8 @@ CREATE TABLE event_config (
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    student_id TEXT UNIQUE NOT NULL, -- Note: This acts as the Roll No for the system
-    phone TEXT,
+    student_id TEXT NOT NULL, -- Roll No (No longer unique)
+    phone TEXT UNIQUE NOT NULL, -- Mobile Number is now the unique identifier
     department TEXT,
     year TEXT,
     verification_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'REJECTED')),

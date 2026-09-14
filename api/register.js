@@ -8,11 +8,12 @@ module.exports = async function handler(req, res) {
 
     const { name, student_id, phone, department, year } = req.body;
 
-    if (!name || !student_id || !department) {
-        return createResponse(res, 400, { success: false, error: { code: 'INVALID_INPUT', message: 'Missing required fields.' }});
+    if (!name || !student_id || !department || !phone) {
+        return createResponse(res, 400, { success: false, error: { code: 'INVALID_INPUT', message: 'Missing required fields. Mobile number is mandatory.' }});
     }
 
     const normalizedStudentId = student_id.trim().toLowerCase();
+    const normalizedPhone = phone.trim().replace(/\s+/g, '');
 
     try {
         // Check if registration is open
@@ -47,7 +48,7 @@ module.exports = async function handler(req, res) {
                 { 
                     name: name.trim(), 
                     student_id: normalizedStudentId, 
-                    phone: phone?.trim(), 
+                    phone: normalizedPhone, 
                     department: department.trim(), 
                     year: year?.trim(),
                     verification_status: 'VERIFIED',
@@ -60,7 +61,7 @@ module.exports = async function handler(req, res) {
 
         if (error) {
             if (error.code === '23505') { // Unique violation
-                return createResponse(res, 409, { success: false, error: { code: 'STUDENT_ALREADY_REGISTERED', message: 'A student with this Roll No is already registered.' }});
+                return createResponse(res, 409, { success: false, error: { code: 'STUDENT_ALREADY_REGISTERED', message: 'A student with this Mobile Number is already registered.' }});
             }
             throw error;
         }

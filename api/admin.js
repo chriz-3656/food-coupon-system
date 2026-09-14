@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
                     `, { count: 'exact' });
 
                 if (search) {
-                    query = query.or(`name.ilike.%${search}%,student_id.ilike.%${search}%`);
+                    query = query.or(`name.ilike.%${search}%,student_id.ilike.%${search}%,phone.ilike.%${search}%`);
                 }
 
                 query = query.order('created_at', { ascending: false }).range(start, end);

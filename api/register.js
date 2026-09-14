@@ -28,23 +28,57 @@ module.exports = async function handler(req, res) {
             return createResponse(res, 403, { success: false, error: { code: 'REGISTRATION_CLOSED', message: 'Registration is currently closed.' }});
         }
 
-        // Insert student
-        const { data, error } = await supabase
+        const crypto = require('crypto');
+        
+        function generateCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i=0; i<8; i++) {
+                if (i===4) code += '-';
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Insert student (auto-verify)
+        const { data: student, error } = await supabase
             .from('students')
             .insert([
-                { name: name.trim(), student_id: normalizedStudentId, phone: phone?.trim(), department: department.trim(), year: year?.trim() }
+                { 
+                    name: name.trim(), 
+                    student_id: normalizedStudentId, 
+                    phone: phone?.trim(), 
+                    department: department.trim(), 
+                    year: year?.trim(),
+                    verification_status: 'VERIFIED',
+                    verified_at: new Date().toISOString(),
+                    verified_by: 'system'
+                }
             ])
             .select('id, student_id, verification_status')
             .single();
 
         if (error) {
             if (error.code === '23505') { // Unique violation
-                return createResponse(res, 409, { success: false, error: { code: 'STUDENT_ALREADY_REGISTERED', message: 'A student with this ID is already registered.' }});
+                return createResponse(res, 409, { success: false, error: { code: 'STUDENT_ALREADY_REGISTERED', message: 'A student with this Roll No is already registered.' }});
             }
             throw error;
         }
 
-        return createResponse(res, 200, { success: true, data: { status: data.verification_status, id: data.id }});
+        // Auto-generate coupon
+        const token = crypto.randomBytes(32).toString('hex');
+        const code = generateCode();
+
+        const { error: insertError } = await supabase.from('coupons').insert([{
+            student_id: student.id,
+            coupon_code: code,
+            coupon_token: token,
+            status: 'ACTIVE'
+        }]);
+
+        if (insertError) throw insertError;
+
+        return createResponse(res, 200, { success: true, data: { status: student.verification_status, id: student.id }});
 
     } catch (error) {
         console.error('Registration error:', error);

@@ -92,8 +92,8 @@
                     
                     localStorage.setItem('student_uuid', result.data.id);
                     setTimeout(() => {
-                        window.location.href = `/registration-status.html`;
-                    }, 1500);
+                        window.location.href = `/coupon.html`;
+                    }, 1000);
                 } else {
                     msgBox.textContent = result.error.message || 'Registration failed.';
                     msgBox.classList.add('msg-error');

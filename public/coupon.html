@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Food Coupon</title>
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         .ticket {
             background: #fff;
@@ -89,6 +90,10 @@
             <div id="c-status" class="status-badge">STATUS</div>
             <p class="text-muted mt-4" style="font-size:0.9rem;">Present this QR code or coupon code at the food counter.</p>
         </div>
+
+        <div id="action-buttons" class="text-center mt-4 hidden">
+            <button class="btn btn-success" onclick="downloadTicket()" style="margin-bottom:10px;">Download Ticket as Image</button>
+        </div>
     </div>
     
     <script>
@@ -111,6 +116,7 @@
                 if (data.success) {
                     const c = data.data;
                     document.getElementById('ticket-container').classList.remove('hidden');
+                    document.getElementById('action-buttons').classList.remove('hidden');
                     
                     document.getElementById('c-event').textContent = c.event_name || 'Food Distribution';
                     document.getElementById('c-name').textContent = c.student_name;
@@ -144,6 +150,28 @@
                 err.textContent = 'Network error loading coupon.';
                 err.classList.remove('hidden');
             }
+        }
+
+        async function downloadTicket() {
+            const ticketElement = document.getElementById('ticket-container');
+            
+            // Temporary styles for a clean capture
+            ticketElement.style.border = 'none';
+            ticketElement.style.boxShadow = 'none';
+            
+            try {
+                const canvas = await html2canvas(ticketElement, { scale: 2 }); // High res
+                const link = document.createElement('a');
+                link.download = `food_coupon_${document.getElementById('c-sid').textContent}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch(e) {
+                alert('Could not download ticket. Please take a screenshot instead.');
+            }
+            
+            // Restore styles
+            ticketElement.style.border = '2px dashed #cbd5e1';
+            ticketElement.style.boxShadow = '0 10px 25px rgba(0,0,0,0.05)';
         }
 
         loadCoupon();

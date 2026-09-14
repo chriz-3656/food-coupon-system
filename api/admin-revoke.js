@@ -1,6 +1,6 @@
 const { supabase, createResponse, verifyAuth } = require('./_utils');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
     if (!verifyAuth(req, 'admin')) return createResponse(res, 401, { success: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized' }});
 

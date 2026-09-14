@@ -1,6 +1,6 @@
 const { supabase, createResponse, rateLimit } = require('./_utils');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).end();
     if (!rateLimit(req, res, 20, 60000)) {
         return createResponse(res, 429, { success: false, error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests.' }});

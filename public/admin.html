@@ -65,7 +65,7 @@
             <h1>Admin Dashboard</h1>
             <div>
                 <a href="/verify.html" class="btn" style="width:auto; padding: 8px 16px; margin-right: 10px;">Volunteer Scanner</a>
-                <a href="/api/admin-export" target="_blank" class="btn btn-success" style="width:auto; padding: 8px 16px;">Export CSV</a>
+                <a href="/api/admin?action=export" target="_blank" class="btn btn-success" style="width:auto; padding: 8px 16px;">Export CSV</a>
             </div>
         </header>
 
@@ -111,7 +111,7 @@
         
         async function loadStats() {
             try {
-                const res = await fetch('/api/admin-stats');
+                const res = await fetch('/api/admin?action=stats');
                 const data = await res.json();
                 if (data.success) {
                     const s = data.data;
@@ -130,7 +130,7 @@
         async function loadStudents() {
             const search = document.getElementById('search-input').value;
             try {
-                const res = await fetch(`/api/admin-students?page=${currentPage}&limit=20&search=${encodeURIComponent(search)}`);
+                const res = await fetch(`/api/admin?action=students&page=${currentPage}&limit=20&search=${encodeURIComponent(search)}`);
                 const data = await res.json();
                 
                 if (data.success) {
@@ -176,10 +176,10 @@
         async function verifyStudent(id) {
             if (!confirm('Verify this student and generate a coupon?')) return;
             try {
-                const res = await fetch('/api/admin-verify', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ student_id: id, action: 'verify' })
+                    body: JSON.stringify({ action: 'verify', student_id: id })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -196,10 +196,10 @@
         async function rejectStudent(id) {
             if (!confirm('Reject this student?')) return;
             try {
-                const res = await fetch('/api/admin-verify', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ student_id: id, action: 'reject' })
+                    body: JSON.stringify({ action: 'reject', student_id: id })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -216,10 +216,10 @@
         async function revokeCoupon(code) {
             if (!confirm('Revoke this coupon? It will no longer be valid.')) return;
             try {
-                const res = await fetch('/api/admin-revoke', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ coupon_code: code })
+                    body: JSON.stringify({ action: 'revoke', coupon_code: code })
                 });
                 const data = await res.json();
                 if (data.success) {

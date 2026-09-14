@@ -63,7 +63,7 @@
             <div id="message-box"></div>
         </div>
         <div class="text-center mt-4">
-            <a href="/registration-status.html">Already registered? Check status</a>
+            <a href="/registration-status">Already registered? Check status</a>
         </div>
     </div>
     
@@ -101,7 +101,7 @@
                     
                     localStorage.setItem('student_uuid', result.data.id);
                     setTimeout(() => {
-                        window.location.href = `/coupon.html`;
+                        window.location.href = `/coupon`;
                     }, 1000);
                 } else {
                     msgBox.textContent = result.error.message || 'Registration failed.';

@@ -60,7 +60,7 @@
                 const result = await res.json();
 
                 if (result.success) {
-                    window.location.href = '/admin.html';
+                    window.location.href = '/admin';
                 } else {
                     msgBox.textContent = result.error.message || 'Login failed.';
                     msgBox.classList.add('msg-error');

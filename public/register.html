@@ -20,16 +20,30 @@
                     <input type="text" id="name" required placeholder="Jane Doe">
                 </div>
                 <div class="form-group">
-                    <label for="student_id">Student ID</label>
-                    <input type="text" id="student_id" required placeholder="CS12345">
+                    <label for="student_id">Roll No</label>
+                    <input type="text" id="student_id" required placeholder="e.g. 123456">
                 </div>
                 <div class="form-group">
                     <label for="department">Department</label>
-                    <input type="text" id="department" required placeholder="Computer Science">
+                    <select id="department" required>
+                        <option value="" disabled selected>Select your department</option>
+                        <option value="Diploma">Diploma</option>
+                        <option value="EEE">EEE</option>
+                        <option value="EC">EC</option>
+                        <option value="CF">CF</option>
+                        <option value="B-TECH CIVIL">B-TECH CIVIL</option>
+                        <option value="COMPUTER SCIENCE">COMPUTER SCIENCE</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="year">Year / Class (Optional)</label>
-                    <input type="text" id="year" placeholder="Senior">
+                    <label for="year">Year</label>
+                    <select id="year" required>
+                        <option value="" disabled selected>Select your year</option>
+                        <option value="1st">1st</option>
+                        <option value="2nd">2nd</option>
+                        <option value="3rd">3rd</option>
+                        <option value="4th">4th</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number (Optional)</label>

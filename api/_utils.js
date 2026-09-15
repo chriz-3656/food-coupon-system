@@ -2,19 +2,23 @@ const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SECRET_KEY; // SERVICE ROLE KEY!
-
-// Validate critical env vars early
-if (!supabaseUrl || !supabaseKey) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY");
+function requireEnv(name) {
+    const val = process.env[name];
+    if (!val) {
+        console.error(`CRITICAL: Missing environment variable ${name}`);
+        throw new Error(`Server configuration error: ${name} is missing.`);
+    }
+    return val;
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+const SUPABASE_URL = requireEnv('SUPABASE_URL');
+const SUPABASE_SECRET_KEY = requireEnv('SUPABASE_SECRET_KEY'); // Use service_role key to bypass RLS in the API layer
+const SESSION_SECRET = requireEnv('SESSION_SECRET');
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: { persistSession: false }
 });
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'fallback_secret_do_not_use_in_prod';
 
 function createResponse(res, status, data) {
     res.status(status).json(data);
@@ -101,3 +105,4 @@ module.exports = {
     clearAuthCookie,
     rateLimit
 };
+module.exports.SESSION_SECRET = SESSION_SECRET;

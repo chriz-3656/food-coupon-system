@@ -76,7 +76,7 @@ module.exports = async function handler(req, res) {
 
         const jwt = require('jsonwebtoken');
         const cookie = require('cookie');
-        const SESSION_SECRET = process.env.SESSION_SECRET || 'fallback';
+        const SESSION_SECRET = require('./_utils').SESSION_SECRET;
         const sessionToken = jwt.sign({ student_id: data.student_uuid }, SESSION_SECRET, { expiresIn: '7d' });
         
         res.setHeader('Set-Cookie', cookie.serialize('student_session', sessionToken, {

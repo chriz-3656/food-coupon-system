@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
         // Student is verified, likely has a coupon. Set session cookie so they can retrieve it.
         const sessionToken = jwt.sign(
             { student_id: data.id, role: 'student' },
-            process.env.SESSION_SECRET || 'fallback',
+            require('./_utils').SESSION_SECRET,
             { expiresIn: '7d' }
         );
 

@@ -1,8 +1,4 @@
--- seed.sql
--- Run this if you want to test the system with some dummy data.
-
-INSERT INTO event_config (event_name, registration_open) 
-VALUES ('Spring Festival Food Distribution', true)
+-- Canonical seed based on recreate_database.sql
+INSERT INTO event_config (event_name, registration_open, coupon_expires_at) 
+VALUES ('Food Distribution', true, now() + interval '1 day')
 ON CONFLICT (id) DO NOTHING;
-
--- You can safely run this on a fresh database to ensure settings exist.

@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
 
     let studentId;
     try {
-        const decoded = jwt.verify(sessionToken, process.env.SESSION_SECRET || 'fallback');
+        const decoded = jwt.verify(sessionToken, require('./_utils').SESSION_SECRET);
         studentId = decoded.student_id;
     } catch (err) {
         return createResponse(res, 401, { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid session.' }});

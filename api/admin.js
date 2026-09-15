@@ -128,19 +128,20 @@ module.exports = async function handler(req, res) {
                     const token = crypto.randomBytes(32).toString('hex');
                     const code = generateCode();
 
-                    const { error: insertError } = await supabase.from('coupons').insert([{
-                        student_id: student.id,
-                        coupon_code: code,
-                        coupon_token: token,
-                        status: 'ACTIVE'
-                    }]);
+                    const { data: rpcData, error: rpcError } = await supabase.rpc('admin_verify_student', {
+                        p_student_id: student_id,
+                        p_coupon_code: code,
+                        p_coupon_token: token
+                    });
 
-                    if (insertError) {
-                        if (insertError.code === '23505') return createResponse(res, 409, { success: false, error: { code: 'COUPON_EXISTS', message: 'Coupon already exists.' }});
-                        throw insertError;
+                    if (rpcError) {
+                        console.error("Admin verify RPC error:", rpcError);
+                        throw rpcError;
+                    }
+                    if (!rpcData.success) {
+                        return createResponse(res, 400, { success: false, error: rpcData });
                     }
 
-                    await supabase.from('students').update({ verification_status: 'VERIFIED', verified_at: new Date().toISOString(), verified_by: 'admin' }).eq('id', student_id);
                     return createResponse(res, 200, { success: true, message: 'Student verified.' });
                 }
             }

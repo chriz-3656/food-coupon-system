@@ -29,14 +29,15 @@ CREATE TABLE event_config (
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    student_id TEXT NOT NULL, -- Roll No (No longer unique)
-    phone TEXT UNIQUE NOT NULL, -- Mobile Number is now the unique identifier
-    department TEXT,
-    year TEXT,
+    student_id TEXT NOT NULL,
+    phone TEXT UNIQUE NOT NULL,
+    department TEXT NOT NULL,
+    year TEXT NOT NULL,
     verification_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'REJECTED')),
     created_at TIMESTAMPTZ DEFAULT now(),
     verified_at TIMESTAMPTZ,
-    verified_by TEXT
+    verified_by TEXT,
+    UNIQUE (student_id, department)
 );
 
 CREATE TABLE coupons (
@@ -241,3 +242,46 @@ REVOKE ALL ON FUNCTION get_dashboard_stats() FROM PUBLIC;
 REVOKE ALL ON FUNCTION get_dashboard_stats() FROM anon;
 REVOKE ALL ON FUNCTION get_dashboard_stats() FROM authenticated;
 GRANT EXECUTE ON FUNCTION get_dashboard_stats() TO service_role;
+
+-- 9. Add RPC for transactional admin verification
+CREATE OR REPLACE FUNCTION admin_verify_student(
+    p_student_id UUID,
+    p_coupon_code TEXT,
+    p_coupon_token TEXT
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_config RECORD;
+    v_expires_at TIMESTAMPTZ;
+    v_student RECORD;
+BEGIN
+    SELECT * INTO v_student FROM students WHERE id = p_student_id FOR UPDATE;
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'code', 'NOT_FOUND', 'message', 'Student not found.');
+    END IF;
+
+    IF v_student.verification_status = 'VERIFIED' THEN
+        RETURN jsonb_build_object('success', false, 'code', 'ALREADY_VERIFIED', 'message', 'Already verified.');
+    END IF;
+
+    SELECT * INTO v_config FROM event_config LIMIT 1;
+    v_expires_at := v_config.coupon_expires_at;
+
+    INSERT INTO coupons (student_id, coupon_code, coupon_token, status, expires_at)
+    VALUES (p_student_id, p_coupon_code, p_coupon_token, 'ACTIVE', v_expires_at);
+
+    UPDATE students SET verification_status = 'VERIFIED', verified_at = now(), verified_by = 'admin' WHERE id = p_student_id;
+
+    RETURN jsonb_build_object('success', true);
+EXCEPTION WHEN unique_violation THEN
+    RETURN jsonb_build_object('success', false, 'code', 'COUPON_EXISTS', 'message', 'Coupon already exists.');
+END;
+$$;
+
+REVOKE ALL ON FUNCTION admin_verify_student(UUID, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION admin_verify_student(UUID, TEXT, TEXT) FROM anon;
+REVOKE ALL ON FUNCTION admin_verify_student(UUID, TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION admin_verify_student(UUID, TEXT, TEXT) TO service_role;

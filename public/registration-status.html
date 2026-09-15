@@ -84,7 +84,11 @@
                         msg.innerHTML = `<div style="color:var(--warning);font-weight:bold;">Status: Pending</div>`;
                     }
                 } else {
-                    msg.innerHTML = `<div style="color:var(--danger);">${data.error.message}</div>`;
+                    msg.innerHTML = '';
+                    const errDiv = document.createElement('div');
+                    errDiv.style.color = 'var(--danger)';
+                    errDiv.textContent = data.error.message;
+                    msg.appendChild(errDiv);
                 }
             } catch (e) {
                 document.getElementById('check-msg').textContent = 'Network error checking status.';

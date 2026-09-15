@@ -1,12 +1,12 @@
--- schema.sql
+-- Canonical schema based on recreate_database.sql
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE event_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_name TEXT NOT NULL,
+    event_name TEXT NOT NULL DEFAULT 'Food Distribution Event',
     registration_open BOOLEAN DEFAULT true,
     registration_closes_at TIMESTAMPTZ,
     coupon_expires_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -15,12 +15,13 @@ CREATE TABLE students (
     name TEXT NOT NULL,
     student_id TEXT NOT NULL,
     phone TEXT UNIQUE NOT NULL,
-    department TEXT,
-    year TEXT,
+    department TEXT NOT NULL,
+    year TEXT NOT NULL,
     verification_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'REJECTED')),
     created_at TIMESTAMPTZ DEFAULT now(),
     verified_at TIMESTAMPTZ,
-    verified_by TEXT
+    verified_by TEXT,
+    UNIQUE (student_id, department)
 );
 
 CREATE TABLE coupons (
@@ -57,9 +58,9 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Indexes
 CREATE INDEX idx_students_student_id ON students(student_id);
 CREATE INDEX idx_students_verification_status ON students(verification_status);
 CREATE INDEX idx_coupons_coupon_code ON coupons(coupon_code);
 CREATE INDEX idx_coupons_coupon_token ON coupons(coupon_token);
 CREATE INDEX idx_coupons_status ON coupons(status);
+CREATE INDEX idx_coupons_expires_at ON coupons(expires_at);

@@ -1,12 +1,30 @@
-# One-Time Food Coupon System
+# One-Time Food Coupon System - Freshers Day 2026
 
-A completely serverless, lightweight, and atomic food coupon distribution and redemption system designed for college events.
+A highly secure, serverless digital food coupon system for College of Engineering, Aranmula.
+
+## Features
+- **Serverless Architecture:** Deployed on Vercel utilizing lightweight Node.js Serverless Functions.
+- **Atomic Redemptions:** Guaranteed double-spend prevention using PostgreSQL row-level locking (`SELECT ... FOR UPDATE`).
+- **Cryptographic Tokens:** Coupons are secured via 256-bit cryptographically random tokens, never exposed to unauthorized users.
+- **Data Minimization:** APIs sanitize payloads and strip secrets before transmitting to the browser.
+- **XSS & Injection Protection:** Admin dashboards dynamically construct DOM nodes. CSV exports prepend quotes to formulas to prevent spreadsheet injection. 
+- **Role-Based Access Control:** `SECURITY DEFINER` RPCs are isolated from `PUBLIC` access. Serverless functions operate via the Supabase Service Role Key while enforcing JWT-based `HttpOnly` cookie sessions for admins and volunteers.
+- **Brutalist UI:** A high-contrast, edgy aesthetic optimized for fast mobile scanning.
 
 ## Architecture
 - **Frontend:** Vanilla HTML/CSS/JS (mobile-first, CDN dependencies only).
 - **Backend:** Node.js Vercel Serverless Functions (`/api/*`). No long-running Express server.
 - **Database:** Supabase PostgreSQL.
 - **Security:** "Exactly once" redemption is strictly enforced atomically at the database level using a PL/pgSQL function (`redeem_coupon`) with row-level locking (`FOR UPDATE`). Concurrent scans or API abuse will fail safely.
+
+## Security Model & Threat Mitigation
+| Threat | Risk | Mitigation |
+|---|---|---|
+| Double Redemption | CRITICAL | PostgreSQL transaction wraps a `FOR UPDATE` lock on the coupon row. 20 concurrent network hits will result in exactly 1 success and 19 `ALREADY_USED` rejections. |
+| Stored XSS | HIGH | All admin dashboard records (names, IDs) are safely injected via `textContent` rather than `innerHTML`. |
+| CSV Injection | MEDIUM | Any student name/department beginning with `=`, `+`, `-`, or `@` is prefixed with a `'` prior to CSV export. |
+| Unauthorized RPC | HIGH | `redeem_coupon` and `register_student_and_coupon` RPCs have `EXECUTE` privileges revoked from `PUBLIC`, `anon`, and `authenticated`. |
+| Token Sniffing | HIGH | Coupon view relies on `HttpOnly` secure JWT cookies rather than `localStorage`. `verify` API hides token if a manual code is entered. |
 
 ## Folder Structure
 ```text

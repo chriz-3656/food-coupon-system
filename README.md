@@ -46,9 +46,7 @@ food-coupon-system/
 │   ├── redeem.js           # Atomic redemption (RPC call)
 │   └── ...                 # Other endpoints
 ├── supabase/               # Database definitions
-│   ├── schema.sql          # Tables, constraints, indexes
-│   ├── functions.sql       # RPCs (redeem_coupon)
-│   └── policies.sql        # RLS (locked down)
+│   └── recreate_database.sql # Tables, constraints, indexes, RLS, and RPCs
 ├── tests/                  # Automated tests
 ├── vercel.json             # Vercel config
 ├── package.json            # Node dependencies
@@ -58,11 +56,8 @@ food-coupon-system/
 ## Database Setup
 1. Create a Supabase project (https://supabase.com).
 2. Go to the SQL Editor.
-3. Run the contents of `supabase/schema.sql`.
-4. Run the contents of `supabase/functions.sql`.
-5. Run the contents of `supabase/policies.sql`.
-6. (Optional) Insert an event record via `INSERT INTO event_config (event_name) VALUES ('My Event');`.
-7. Go to Project Settings -> API and get your `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+3. Open `supabase/recreate_database.sql` and run the entire script. It contains the locked-down schema, tables, and RPCs.
+4. Go to Project Settings -> API and get your `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Environment Variables
 In your Vercel project, go to **Settings -> Environment Variables** and add:

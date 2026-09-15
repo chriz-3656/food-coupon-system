@@ -107,17 +107,8 @@
     
     <script>
         async function loadCoupon() {
-            const uuid = localStorage.getItem('student_uuid');
-            if (!uuid) {
-                document.getElementById('loading').style.display = 'none';
-                const err = document.getElementById('error-msg');
-                err.textContent = 'No session found. Please register or ask a volunteer for help.';
-                err.classList.remove('hidden');
-                return;
-            }
-
             try {
-                const res = await fetch(`/api/coupon?id=${uuid}`);
+                const res = await fetch(`/api/coupon`);
                 const data = await res.json();
 
                 document.getElementById('loading').style.display = 'none';
@@ -138,7 +129,6 @@
                     else if (c.status === 'USED') statusEl.classList.add('status-used');
                     else statusEl.classList.add('status-expired');
 
-                    // Generate QR code with the secure token
                     const qrToken = c.coupon_token;
                     QRCode.toCanvas(document.getElementById('qr-canvas'), qrToken, {
                         width: 250,
@@ -150,7 +140,7 @@
                     });
                 } else {
                     const err = document.getElementById('error-msg');
-                    err.textContent = data.error.message || 'Could not load coupon.';
+                    err.textContent = data.error?.message || 'Could not load coupon.';
                     err.classList.remove('hidden');
                 }
             } catch (e) {

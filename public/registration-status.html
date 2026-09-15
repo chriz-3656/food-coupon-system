@@ -87,15 +87,7 @@
             }
         }
 
-        const storedUUID = localStorage.getItem('student_uuid');
-        if (storedUUID) {
-            document.getElementById('manual-check-card').style.display = 'none';
-            document.getElementById('status-card').style.display = 'block';
-            checkStatusByUUID(storedUUID);
-        } else {
-            document.getElementById('status-card').style.display = 'none';
-            document.getElementById('manual-check-card').style.display = 'block';
-        }
+        document.getElementById('manual-check-card').style.display = 'block';
 
         document.getElementById('check-form').addEventListener('submit', (e) => {
             e.preventDefault();

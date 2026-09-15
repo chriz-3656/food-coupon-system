@@ -154,23 +154,59 @@
                             cCode = st.coupons[0].coupon_code;
                         }
 
-                        let actionBtn = '';
+                        const tr = document.createElement('tr');
+                        
+                        const tdName = document.createElement('td');
+                        tdName.textContent = st.name;
+                        
+                        const tdId = document.createElement('td');
+                        tdId.textContent = st.student_id;
+                        
+                        const tdStatus = document.createElement('td');
+                        const statusBadge = document.createElement('span');
+                        statusBadge.className = `badge badge-${st.verification_status}`;
+                        statusBadge.textContent = st.verification_status;
+                        tdStatus.appendChild(statusBadge);
+                        
+                        const tdCoupon = document.createElement('td');
+                        const cBadge = document.createElement('span');
+                        cBadge.className = `badge badge-${cStatus}`;
+                        cBadge.textContent = cStatus;
+                        tdCoupon.appendChild(cBadge);
+                        const cSmall = document.createElement('small');
+                        cSmall.textContent = cCode ? ` ${cCode}` : '';
+                        tdCoupon.appendChild(cSmall);
+
+                        const tdAction = document.createElement('td');
                         if (st.verification_status === 'PENDING') {
-                            actionBtn += `<button class="btn btn-success" style="padding:6px; font-size:0.8rem; margin-right: 5px;" onclick="verifyStudent('${st.id}')">Verify</button>`;
-                            actionBtn += `<button class="btn btn-danger" style="padding:6px; font-size:0.8rem;" onclick="rejectStudent('${st.id}')">Reject</button>`;
+                            const btnVerify = document.createElement('button');
+                            btnVerify.className = 'btn btn-success';
+                            btnVerify.style.cssText = 'padding:6px; font-size:0.8rem; margin-right: 5px;';
+                            btnVerify.textContent = 'Verify';
+                            btnVerify.onclick = () => verifyStudent(st.id);
+                            tdAction.appendChild(btnVerify);
+
+                            const btnReject = document.createElement('button');
+                            btnReject.className = 'btn btn-danger';
+                            btnReject.style.cssText = 'padding:6px; font-size:0.8rem;';
+                            btnReject.textContent = 'Reject';
+                            btnReject.onclick = () => rejectStudent(st.id);
+                            tdAction.appendChild(btnReject);
                         } else if (cStatus === 'ACTIVE') {
-                            actionBtn += `<button class="btn btn-danger" style="padding:6px; font-size:0.8rem;" onclick="revokeCoupon('${cCode}')">Revoke</button>`;
+                            const btnRevoke = document.createElement('button');
+                            btnRevoke.className = 'btn btn-danger';
+                            btnRevoke.style.cssText = 'padding:6px; font-size:0.8rem;';
+                            btnRevoke.textContent = 'Revoke';
+                            btnRevoke.onclick = () => revokeCoupon(cCode);
+                            tdAction.appendChild(btnRevoke);
                         }
 
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${st.name}</td>
-                                <td>${st.student_id}</td>
-                                <td><span class="badge badge-${st.verification_status}">${st.verification_status}</span></td>
-                                <td><span class="badge badge-${cStatus}">${cStatus}</span> <small>${cCode}</small></td>
-                                <td>${actionBtn}</td>
-                            </tr>
-                        `;
+                        tr.appendChild(tdName);
+                        tr.appendChild(tdId);
+                        tr.appendChild(tdStatus);
+                        tr.appendChild(tdCoupon);
+                        tr.appendChild(tdAction);
+                        tbody.appendChild(tr);
                     });
                     
                     document.getElementById('page-info').textContent = `Page ${data.data.page}`;

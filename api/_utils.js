@@ -65,7 +65,11 @@ function clearAuthCookie(res) {
 // Simple in-memory rate limiter (Warning: resets on Serverless cold start, but better than nothing)
 const rateLimits = new Map();
 function rateLimit(req, res, maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '50'), windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000')) {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    if (typeof ip === 'string' && ip.includes(',')) {
+        ip = ip.split(',')[0].trim();
+    }
+    
     const now = Date.now();
     
     if (!rateLimits.has(ip)) {

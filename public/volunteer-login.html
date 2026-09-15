@@ -25,7 +25,11 @@
         <div class="card">
             <form id="login-form">
                 <div class="form-group">
-                    <label for="password">Volunteer Password / PIN</label>
+                    <label for="volunteer_id">Volunteer ID (e.g. V01, V02)</label>
+                    <input type="text" id="volunteer_id" required placeholder="V01">
+                </div>
+                <div class="form-group">
+                    <label for="password">Event PIN / Password</label>
                     <input type="password" id="password" required>
                 </div>
                 <button type="submit" class="btn" id="submit-btn">Login</button>
@@ -49,7 +53,10 @@
                 const res = await fetch('/api/volunteer-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: document.getElementById('password').value })
+                    body: JSON.stringify({ 
+                        volunteer_id: document.getElementById('volunteer_id').value,
+                        password: document.getElementById('password').value 
+                    })
                 });
                 const result = await res.json();
 

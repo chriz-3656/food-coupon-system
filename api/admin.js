@@ -1,6 +1,19 @@
 const { supabase, createResponse, verifyAuth } = require('./_utils');
 const crypto = require('crypto');
 
+function escapeLike(str) {
+    return str.replace(/[%_\\]/g, '\\$&');
+}
+
+function preventCsvInjection(cell) {
+    if (!cell) return '';
+    const str = String(cell);
+    if (/^[=+\-@]/.test(str)) {
+        return "'" + str; // Prefix with quote
+    }
+    return str;
+}
+
 function generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
@@ -19,23 +32,20 @@ module.exports = async function handler(req, res) {
     try {
         if (req.method === 'GET') {
             if (action === 'stats') {
-                const { data: students, error: sError } = await supabase.from('students').select('verification_status');
-                const { data: coupons, error: cError } = await supabase.from('coupons').select('status');
-                
-                if (sError || cError) throw sError || cError;
-
-                let registered = students.length;
-                let verified = students.filter(s => s.verification_status === 'VERIFIED').length;
-                let pending = students.filter(s => s.verification_status === 'PENDING').length;
-                
-                let active = coupons.filter(c => c.status === 'ACTIVE').length;
-                let redeemed = coupons.filter(c => c.status === 'USED').length;
-                let expired = coupons.filter(c => c.status === 'EXPIRED').length;
-                let revoked = coupons.filter(c => c.status === 'REVOKED').length;
+                const { data, error } = await supabase.rpc('get_dashboard_stats');
+                if (error) throw error;
 
                 return createResponse(res, 200, {
                     success: true,
-                    data: { registered, verified, pending, active, redeemed, expired, revoked }
+                    data: { 
+                        registered: data.total_students, 
+                        verified: data.verified_students, 
+                        pending: data.pending_students, 
+                        active: data.active_coupons, 
+                        redeemed: data.used_coupons, 
+                        expired: data.expired_coupons || 0, 
+                        revoked: data.revoked_coupons || 0 
+                    }
                 });
             }
 
@@ -52,7 +62,8 @@ module.exports = async function handler(req, res) {
                     `, { count: 'exact' });
 
                 if (search) {
-                    query = query.or(`name.ilike.%${search}%,student_id.ilike.%${search}%,phone.ilike.%${search}%`);
+                    const safeSearch = escapeLike(search);
+                    query = query.or(`name.ilike.%${safeSearch}%,student_id.ilike.%${safeSearch}%,phone.ilike.%${safeSearch}%`);
                 }
 
                 query = query.order('created_at', { ascending: false }).range(start, end);
@@ -78,13 +89,13 @@ module.exports = async function handler(req, res) {
 
                 data.forEach(st => {
                     const row = [
-                        `"${(st.name || '').replace(/"/g, '""')}"`,
-                        `"${st.student_id || ''}"`,
-                        `"${(st.department || '').replace(/"/g, '""')}"`,
-                        `"${(st.year || '').replace(/"/g, '""')}"`,
-                        `"${st.verification_status || ''}"`,
-                        `"${st.coupons && st.coupons[0] ? st.coupons[0].coupon_code : ''}"`,
-                        `"${st.coupons && st.coupons[0] ? st.coupons[0].status : ''}"`,
+                        `"${preventCsvInjection(st.name).replace(/"/g, '""')}"`,
+                        `"${preventCsvInjection(st.student_id)}"`,
+                        `"${preventCsvInjection(st.department).replace(/"/g, '""')}"`,
+                        `"${preventCsvInjection(st.year).replace(/"/g, '""')}"`,
+                        `"${preventCsvInjection(st.verification_status)}"`,
+                        `"${st.coupons && st.coupons[0] ? preventCsvInjection(st.coupons[0].coupon_code) : ''}"`,
+                        `"${st.coupons && st.coupons[0] ? preventCsvInjection(st.coupons[0].status) : ''}"`,
                         `"${st.created_at || ''}"`,
                         `"${st.verified_at || ''}"`,
                         `"${st.coupons && st.coupons[0] ? (st.coupons[0].used_at || '') : ''}"`

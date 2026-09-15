@@ -134,6 +134,10 @@
             // ignore constant failures
         }
 
+        let currentToken = null;
+        let currentCode = null;
+        let currentMethod = null;
+
         document.getElementById('btn-manual').addEventListener('click', () => {
             const code = document.getElementById('manual-code').value.trim();
             if (!code) return;
@@ -154,7 +158,7 @@
             
             icon.textContent = '⏳';
             title.textContent = 'Verifying...';
-            title.style.color = 'var(--text-main)';
+            title.style.color = 'var(--primary)';
             desc.textContent = 'Please wait';
             sInfo.classList.add('hidden');
             btns.innerHTML = '';
@@ -170,24 +174,25 @@
                 if (data.success) {
                     const c = data.data;
                     
+                    sInfo.classList.remove('hidden');
+                    document.getElementById('v-name').textContent = c.student_name;
+                    document.getElementById('v-sid').textContent = c.student_id;
+                    document.getElementById('v-dept').textContent = c.department;
+
+                    currentToken = c.coupon_token || null;
+                    currentCode = payload.code || null;
+                    currentMethod = method;
+                    
                     if (c.status === 'ACTIVE') {
                         // VALID, READY TO REDEEM
                         icon.textContent = '✅';
                         title.textContent = 'VALID COUPON';
                         title.style.color = 'var(--success)';
                         desc.textContent = 'Ready for redemption.';
-                        
-                        sInfo.classList.remove('hidden');
-                        document.getElementById('v-name').textContent = c.student_name;
-                        document.getElementById('v-sid').textContent = c.student_id;
-                        document.getElementById('v-dept').textContent = c.department;
-
-                        currentToken = c.coupon_token;
-                        currentMethod = method;
 
                         btns.innerHTML = `
                             <button class="btn btn-success" onclick="redeemCoupon()" style="padding:20px; font-size:1.5rem;">CONFIRM REDEMPTION</button>
-                            <button class="btn mt-4" onclick="showScanner()" style="background:#64748b;">Cancel</button>
+                            <button class="btn mt-4" onclick="showScanner()" style="background:#000; color:#00FF00; border:2px solid #00FF00;">Cancel</button>
                         `;
                     } else if (c.status === 'USED') {
                         icon.textContent = '❌';
@@ -195,43 +200,53 @@
                         title.style.color = 'var(--warning)';
                         desc.textContent = `This coupon was already redeemed.`;
                         
-                        sInfo.classList.remove('hidden');
-                        document.getElementById('v-name').textContent = c.student_name;
-                        document.getElementById('v-sid').textContent = c.student_id;
+                        btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    } else if (c.status === 'EXPIRED') {
+                        icon.textContent = '❌';
+                        title.textContent = 'COUPON EXPIRED';
+                        title.style.color = 'var(--danger)';
+                        desc.textContent = `This coupon is no longer valid.`;
                         
-                        btns.innerHTML = `<button class="btn btn-danger" onclick="showScanner()">BACK TO SCANNER</button>`;
+                        btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    } else if (c.status === 'REVOKED') {
+                        icon.textContent = '❌';
+                        title.textContent = 'COUPON REVOKED';
+                        title.style.color = 'var(--danger)';
+                        desc.textContent = `This coupon cannot be redeemed.`;
+                        
+                        btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
                     } else {
                         icon.textContent = '❌';
                         title.textContent = 'INVALID STATUS';
                         title.style.color = 'var(--danger)';
                         desc.textContent = `Status: ${c.status}`;
-                        btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+                        btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
                     }
                 } else {
                     icon.textContent = '❌';
                     title.textContent = 'INVALID COUPON';
                     title.style.color = 'var(--danger)';
                     desc.textContent = data.error.message || 'Could not verify coupon.';
-                    btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
                 }
             } catch (e) {
                 icon.textContent = '⚠️';
                 title.textContent = 'NETWORK ERROR';
                 title.style.color = 'var(--danger)';
                 desc.textContent = 'Could not reach server.';
-                btns.innerHTML = `<button class="btn" onclick="showScanner()">TRY AGAIN</button>`;
+                btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">TRY AGAIN</button>`;
             }
         }
 
         async function redeemCoupon() {
             const btns = document.getElementById('action-buttons');
-            btns.innerHTML = `<h2>Redeeming...</h2>`;
+            btns.innerHTML = `<h2 style="color:var(--primary);">Redeeming...</h2>`;
 
             try {
                 const res = await fetch('/api/redeem', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ token: currentToken, method: currentMethod })
+                    body: JSON.stringify({ token: currentToken, code: currentCode, method: currentMethod })
                 });
                 const data = await res.json();
                 
@@ -245,8 +260,12 @@
                     title.style.color = 'var(--success)';
                     desc.textContent = 'FOOD CAN BE ISSUED';
                     
-                    document.getElementById('view-result').style.background = '#dcfce7'; // make it very obvious
-                    setTimeout(() => { document.getElementById('view-result').style.background = 'transparent'; }, 1000);
+                    document.getElementById('view-result').style.background = '#00FF00'; 
+                    document.getElementById('view-result').style.color = '#000';
+                    setTimeout(() => { 
+                        document.getElementById('view-result').style.background = 'transparent'; 
+                        document.getElementById('view-result').style.color = 'inherit';
+                    }, 1000);
                     
                     btns.innerHTML = `<button class="btn btn-success" onclick="showScanner()" style="padding:20px; font-size:1.3rem;">SCAN NEXT</button>`;
                 } else {
@@ -255,7 +274,13 @@
                     title.style.color = 'var(--danger)';
                     desc.textContent = data.error.message || 'Failed to redeem.';
                     
-                    btns.innerHTML = `<button class="btn btn-danger" onclick="showScanner()">BACK TO SCANNER</button>`;
+                    if (data.error.code === 'COUPON_ALREADY_USED') {
+                        title.textContent = 'ALREADY USED';
+                        title.style.color = 'var(--warning)';
+                        desc.textContent = 'This coupon was already redeemed.';
+                    }
+
+                    btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
                 }
             } catch (e) {
                 const title = document.getElementById('result-title');
@@ -263,7 +288,7 @@
                 title.textContent = 'NETWORK ERROR';
                 title.style.color = 'var(--danger)';
                 desc.textContent = 'Redemption state unknown. Check admin dashboard if unsure.';
-                btns.innerHTML = `<button class="btn" onclick="showScanner()">BACK TO SCANNER</button>`;
+                btns.innerHTML = `<button class="btn" style="background:var(--danger);" onclick="showScanner()">BACK TO SCANNER</button>`;
             }
         }
 

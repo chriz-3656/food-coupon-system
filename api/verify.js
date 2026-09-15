@@ -29,8 +29,14 @@ module.exports = async function handler(req, res) {
         if (error || !data) {
              return createResponse(res, 404, { success: false, error: { code: 'COUPON_NOT_FOUND', message: 'This coupon could not be verified.' }});
         }
+        
+        let effectiveStatus = data.status;
+        if (data.status === 'ACTIVE' && data.expires_at && new Date(data.expires_at) < new Date()) {
+            effectiveStatus = 'EXPIRED';
+        }
 
-        // Return details for the volunteer to see, BUT DO NOT REDEEM YET.
+        // Return details for the volunteer to see.
+        // Data minimization: Do NOT return the token if they just provided the manual code.
         return createResponse(res, 200, { 
             success: true, 
             data: {
@@ -38,8 +44,8 @@ module.exports = async function handler(req, res) {
                 student_id: data.students.student_id,
                 department: data.students.department,
                 coupon_code: data.coupon_code,
-                coupon_token: data.coupon_token,
-                status: data.status,
+                coupon_token: token ? data.coupon_token : undefined,
+                status: effectiveStatus,
                 expires_at: data.expires_at,
                 used_at: data.used_at
             }

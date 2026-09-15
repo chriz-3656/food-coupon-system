@@ -9,19 +9,22 @@ module.exports = async function handler(req, res) {
         return createResponse(res, 401, { success: false, error: { code: 'UNAUTHORIZED', message: 'Unauthorized.' }});
     }
 
-    const { token, method } = req.body; // method = 'QR' or 'MANUAL'
+    const { token, code, method } = req.body; // method = 'QR' or 'MANUAL'
 
-    if (!token) {
-        return createResponse(res, 400, { success: false, error: { code: 'INVALID_INPUT', message: 'Coupon token required for redemption.' }});
+    if (!token && !code) {
+        return createResponse(res, 400, { success: false, error: { code: 'INVALID_INPUT', message: 'Coupon token or code required for redemption.' }});
     }
+
+    const volunteerId = auth ? auth.volunteer_id : 'admin';
 
     try {
         // Call the PostgreSQL RPC function to perform atomic redemption
         const { data, error } = await supabase.rpc('redeem_coupon', {
-            p_coupon_token: token,
-            p_volunteer_id: 'volunteer_session', // In a real app, track individual volunteers if they have separate accounts
+            p_coupon_token: token || null,
+            p_coupon_code: code || null,
+            p_volunteer_id: volunteerId || 'unknown',
             p_verification_method: method || 'UNKNOWN',
-            p_request_id: null // optional deduplication id
+            p_request_id: null
         });
 
         if (error) {

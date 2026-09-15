@@ -28,52 +28,40 @@
         </div>
 
         <div class="card" id="manual-check-card" style="display:none;">
-             <h3>Check Status by Mobile Number</h3>
-             <form id="check-form" class="mt-4">
+             <h3>Retrieve Coupon & Check Status</h3>
+             <p class="text-muted" style="margin-bottom:20px; font-size:0.9rem;">Enter your details to check your status or recover a lost coupon.</p>
+             <form id="check-form">
                  <div class="form-group">
-                     <input type="tel" id="phone_check" required placeholder="Enter Mobile Number">
+                     <label for="phone_check">Mobile Number</label>
+                     <input type="tel" id="phone_check" required placeholder="e.g. 9876543210">
                  </div>
-                 <button type="submit" class="btn">Check</button>
+                 <div class="form-group">
+                     <label for="roll_check">Roll No (Student ID)</label>
+                     <input type="text" id="roll_check" required placeholder="e.g. CS123">
+                 </div>
+                 <button type="submit" class="btn">Check Status / Retrieve Coupon</button>
              </form>
              <div id="check-msg" class="mt-4"></div>
         </div>
     </div>
     
     <script>
-        async function checkStatusByUUID(uuid) {
+        async function checkStatusByCredentials(phone, roll) {
             try {
-                const res = await fetch(`/api/coupon?id=${uuid}`);
-                const data = await res.json();
-                
-                const statusText = document.getElementById('status-text');
-                const statusDesc = document.getElementById('status-desc');
-                const actionArea = document.getElementById('action-area');
-                
-                if (data.success) {
-                    statusText.textContent = 'Verified!';
-                    statusText.style.color = 'var(--success)';
-                    statusDesc.textContent = 'Your registration was approved and your coupon is ready.';
-                    actionArea.innerHTML = `<a href="/coupon" class="btn btn-success">View Food Coupon</a>`;
-                } else {
-                    statusText.textContent = 'Pending';
-                    statusText.style.color = 'var(--warning)';
-                    statusDesc.textContent = 'Your registration is awaiting verification by an administrator.';
-                }
-            } catch (e) {
-                document.getElementById('status-text').textContent = 'Error';
-            }
-        }
-
-        async function checkStatusByPhone(phone) {
-            try {
-                const res = await fetch(`/api/registration-status?phone=${encodeURIComponent(phone)}`);
+                const res = await fetch('/api/registration-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone, student_id: roll })
+                });
                 const data = await res.json();
                 const msg = document.getElementById('check-msg');
                 
                 if (data.success) {
-                    if (data.data.status === 'VERIFIED') {
-                        msg.innerHTML = `<div style="color:var(--success);font-weight:bold;">Status: Verified</div>
-                        <p class="mt-4 text-muted" style="font-size:0.9em;">(Your coupon is ready. If you registered on this device, go back to the home page or click "Check Status" again if you saved your session. Otherwise, ask a volunteer for help.)</p>`;
+                    if (data.data.redirect) {
+                        msg.innerHTML = `<div style="color:var(--success);font-weight:bold;">Verified! Retrieving coupon...</div>`;
+                        setTimeout(() => {
+                            window.location.href = '/coupon';
+                        }, 1000);
                     } else if (data.data.status === 'REJECTED') {
                         msg.innerHTML = `<div style="color:var(--danger);font-weight:bold;">Status: Rejected</div>`;
                     } else {
@@ -83,17 +71,19 @@
                     msg.innerHTML = `<div style="color:var(--danger);">${data.error.message}</div>`;
                 }
             } catch (e) {
-                document.getElementById('check-msg').textContent = 'Error checking status.';
+                document.getElementById('check-msg').textContent = 'Network error checking status.';
             }
         }
 
         document.getElementById('manual-check-card').style.display = 'block';
+        document.getElementById('status-card').style.display = 'none';
 
         document.getElementById('check-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const phone = document.getElementById('phone_check').value;
+            const roll = document.getElementById('roll_check').value;
             document.getElementById('check-msg').textContent = 'Checking...';
-            checkStatusByPhone(phone);
+            checkStatusByCredentials(phone, roll);
         });
     </script>
     <footer class="app-footer">

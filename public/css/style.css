@@ -37,7 +37,6 @@ body {
   padding: 1.5rem 1rem;
   background: var(--warning);
   border-bottom: var(--brutal-border);
-  margin-bottom: 2rem;
   text-transform: uppercase;
 }
 
@@ -370,5 +369,35 @@ th:last-child, td:last-child {
 #reader a {
   color: var(--primary);
   font-weight: bold;
+}
+
+
+/* Navigation Bar */
+.brutal-nav {
+  display: flex;
+  gap: 15px;
+  padding: 10px 1rem;
+  background: #000;
+  border-bottom: var(--brutal-border);
+  margin-bottom: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.brutal-nav a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border: 2px solid #fff;
+  transition: all 0.2s;
+}
+.brutal-nav a:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #fff;
 }
 

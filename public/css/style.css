@@ -335,3 +335,40 @@ th:last-child, td:last-child {
   margin-bottom: 20px;
   box-shadow: 4px 4px 0px #000;
 }
+
+/* HTML5 QR Scanner dynamically generated button styling */
+#reader button {
+  display: inline-block;
+  padding: 12px 16px;
+  margin-top: 10px;
+  background: var(--primary);
+  color: #fff;
+  border: var(--brutal-border);
+  font-size: 1rem;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 6px 6px 0px #000;
+  transition: all 0.1s;
+}
+#reader button:hover {
+  background: var(--primary-hover);
+  transform: translate(2px, 2px);
+  box-shadow: 4px 4px 0px #000;
+}
+#reader button:active {
+  transform: translate(6px, 6px);
+  box-shadow: 0px 0px 0px #000;
+}
+#reader select {
+  font-family: 'Space Mono', monospace;
+  padding: 8px;
+  border: var(--brutal-border);
+  margin-bottom: 10px;
+}
+#reader a {
+  color: var(--primary);
+  font-weight: bold;
+}
+

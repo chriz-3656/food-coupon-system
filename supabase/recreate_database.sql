@@ -9,6 +9,12 @@ DROP TABLE IF EXISTS coupons CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS event_config CASCADE;
 
+-- Drop old functions
+DROP FUNCTION IF EXISTS redeem_coupon(TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS redeem_coupon(TEXT, TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS register_student_and_coupon(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS get_dashboard_stats();
+
 -- 2. Create the tables
 CREATE TABLE event_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -148,10 +154,10 @@ END;
 $$;
 
 -- Revoke public access to redeem_coupon
-REVOKE ALL ON FUNCTION redeem_coupon FROM PUBLIC;
-REVOKE ALL ON FUNCTION redeem_coupon FROM anon;
-REVOKE ALL ON FUNCTION redeem_coupon FROM authenticated;
-GRANT EXECUTE ON FUNCTION redeem_coupon TO service_role;
+REVOKE ALL ON FUNCTION redeem_coupon(TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION redeem_coupon(TEXT, TEXT, TEXT, TEXT, TEXT) FROM anon;
+REVOKE ALL ON FUNCTION redeem_coupon(TEXT, TEXT, TEXT, TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION redeem_coupon(TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
 
 -- 7. Add RPC for transactional registration
 CREATE OR REPLACE FUNCTION register_student_and_coupon(
@@ -192,10 +198,10 @@ EXCEPTION WHEN unique_violation THEN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION register_student_and_coupon FROM PUBLIC;
-REVOKE ALL ON FUNCTION register_student_and_coupon FROM anon;
-REVOKE ALL ON FUNCTION register_student_and_coupon FROM authenticated;
-GRANT EXECUTE ON FUNCTION register_student_and_coupon TO service_role;
+REVOKE ALL ON FUNCTION register_student_and_coupon(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION register_student_and_coupon(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM anon;
+REVOKE ALL ON FUNCTION register_student_and_coupon(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION register_student_and_coupon(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
 
 -- 8. Add RPC for admin stats (optimizes dashboard loading)
 CREATE OR REPLACE FUNCTION get_dashboard_stats()
@@ -231,7 +237,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION get_dashboard_stats FROM PUBLIC;
-REVOKE ALL ON FUNCTION get_dashboard_stats FROM anon;
-REVOKE ALL ON FUNCTION get_dashboard_stats FROM authenticated;
-GRANT EXECUTE ON FUNCTION get_dashboard_stats TO service_role;
+REVOKE ALL ON FUNCTION get_dashboard_stats() FROM PUBLIC;
+REVOKE ALL ON FUNCTION get_dashboard_stats() FROM anon;
+REVOKE ALL ON FUNCTION get_dashboard_stats() FROM authenticated;
+GRANT EXECUTE ON FUNCTION get_dashboard_stats() TO service_role;

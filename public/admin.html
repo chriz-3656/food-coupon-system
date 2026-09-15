@@ -313,6 +313,27 @@
 
         loadStats();
         loadStudents();
+
+        let refreshTimer = null;
+        let isRefreshing = false;
+
+        async function autoRefresh() {
+            if (isRefreshing) return;
+            isRefreshing = true;
+            try {
+                await Promise.all([loadStats(), loadStudents()]);
+            } catch (e) {
+                console.error("Auto-refresh error:", e);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        refreshTimer = setInterval(autoRefresh, 15000);
+
+        window.addEventListener('beforeunload', () => {
+            if (refreshTimer) clearInterval(refreshTimer);
+        });
     </script>
     <footer class="app-footer">
         Coupon system developed by Chriz (Cyber Forensic and Information Security, 2nd year).<br>
